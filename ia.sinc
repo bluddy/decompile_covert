@@ -2940,14 +2940,26 @@ with : lockprefx=0 {
 :BTS Rmr64,imm8     is $(LONGMODE_ON) & vexMode=0 & opsize=2 & byte=0xf; byte=0xba; mod=3 & Rmr64 & reg_opcode=5; imm8   { local bit=imm8&0x3f; local val=(Rmr64>>bit)&1; Rmr64=Rmr64 | (1<<bit); CF=(val!=0); }
 @endif
 
-:CALL rel16     is $(LONGMODE_OFF) & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8; rel16     { push22(&:2 inst_next); call rel16; }
+# Real mode, 16-bit addressing  
+:CALL rel16 is $(LONGMODE_OFF) & protectedMode=0 & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8 & currentCS; rel16     
+{ push22(&:2 inst_next); local newIP:2 = inst_next:2 + rel16; local dest:4 = segment(currentCS, newIP); call [dest]; }
+
+# Protected mode, 16-bit addressing
+:CALL rel16 is $(LONGMODE_OFF) & protectedMode=1 & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8; rel16   { push22(&:2 inst_next); call rel16; }
+
 :CALL rel16     is $(LONGMODE_OFF) & vexMode=0 & addrsize=1 & opsize=0 & byte=0xe8; rel16     { push42(&:2 inst_next); call rel16; }
 @ifdef IA64
 :CALL rel16     is $(LONGMODE_ON) & vexMode=0 & opsize=0 & byte=0xe8; rel16     { push88(&:8 inst_next); call rel16; }
 @endif
 
 #  When is a Call a Jump, when it jumps right after.  Not always the case but...
-:CALL rel16     is $(LONGMODE_OFF) & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8; simm16=0 & rel16      { push22(&:2 inst_next); goto rel16; }
+# Real mode, 16-bit addressing, zero displacement
+:CALL rel16     is $(LONGMODE_OFF) & protectedMode=0 & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8 & currentCS; simm16=0 & rel16      
+{ push22(&:2 inst_next); local newIP:2 = inst_next:2 + rel16; local dest:4 = segment(currentCS, newIP); goto [dest]; }
+
+# Protected mode, 16-bit addressing, zero displacement  
+:CALL rel16     is $(LONGMODE_OFF) & protectedMode=1 & vexMode=0 & addrsize=0 & opsize=0 & byte=0xe8; simm16=0 & rel16      { push22(&:2 inst_next); goto rel16; }
+
 :CALL rel16     is $(LONGMODE_OFF) & vexMode=0 & addrsize=1 & opsize=0 & byte=0xe8; simm16=0 & rel16      { push42(&:2 inst_next); goto rel16; }
 @ifdef IA64
 :CALL rel16     is $(LONGMODE_ON) & vexMode=0 & opsize=0 & byte=0xe8; simm16=0 & rel16      { push88(&:8 inst_next); goto rel16; }
