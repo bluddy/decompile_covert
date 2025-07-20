@@ -1,5 +1,12 @@
 # Reverse Engineering Rules & Best Practices
 
+## What to do
+When analyzing, your job is to
+1. Rename the functions as you identify them,
+2. Rename the global and local variables
+3. Add clarifying comments.
+4. If possible, determine structs and build them. This is harder and more speculative.
+
 ## 📋 **VARIABLE NAMING CONVENTIONS**
 
 ### **Primary Naming Rules**
