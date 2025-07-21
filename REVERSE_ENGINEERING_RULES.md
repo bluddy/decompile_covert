@@ -18,6 +18,19 @@ When analyzing, your job is to
 6. **Use descriptive partial names** like `some_financial`, `some_weapon`, `some_counter` when uncertain
 7. **Add question marks** for uncertain identifications (e.g., `player_health?`, `mission_timer?`)
 
+### **🚨 CRITICAL NEW RULES**
+
+#### **Data Type Creation**
+- **If you want to create a data type (enum, struct, etc.), tell the user in chat**
+- **Specify the exact values and structure** 
+- **The assistant CANNOT create data types in Ghidra - only the user can**
+
+#### **Comment Brevity**
+- **Keep Ghidra comments brief and to the point**
+- **Avoid long explanations that obscure the code**
+- **Use single-line comments that enhance code readability**
+- **Save detailed analysis for documentation files**
+
 ### **Reused Variable Naming**
 - **Format**: `primary_purpose_or_secondary_purpose`
 - **Examples**: 
