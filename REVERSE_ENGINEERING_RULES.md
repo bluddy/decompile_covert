@@ -4,9 +4,13 @@
 When analyzing, your job is to
 1. Rename the functions as you identify them,
 2. Rename the global and local variables
-3. Add clarifying comments.
-4. If you figure out structs or enums, tell the user the layout - you currently don't have the ability to define them yourself.
-5. Important: Document your progress after every discovery in the appropriate markdown files.
+3. Don't both renaming strings - they're obvious from their content.
+4. Add clarifying comments where it would help. Keep them concise and to the point.
+5. If you figure out structs or enums, document the structs in structs.md and the enums in enums.md.
+6. First look up if the enum/struct exists in these files. If so, update it with new information available.
+7. Enums/structs may have been previously assigned slightly different names, so account for that.
+8. In enums/structs.md, mention one place per enum/struct where you think you found this type.
+9. Important: Document your progress after every discovery in the appropriate markdown files!
 
 ## 📋 **VARIABLE NAMING CONVENTIONS**
 
