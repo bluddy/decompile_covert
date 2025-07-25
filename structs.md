@@ -78,39 +78,69 @@ struct Organization {
 
 ---
 
-## GameObject Structure
+## PANIAnimatedSprite Structure
 **Size**: 52 bytes (0x34)  
 **Found in**: `initialize_game_object_structure_52_bytes` (1792:b4ea)  
-**Base Address Pattern**: `object_index * 0x34 + base_offset_0x7d8`
+**Base Address Pattern**: `sprite_index * 0x34 + base_offset_0x7d8`
 
 ```c
-struct GameObject {
-    uint active_flag;            // +0x00: Active/initialized flag (set to 1)
-    uint status;                 // +0x02: Object status (initialized to 0)
-    int object_id;               // +0x04: Object ID or type (param - 1)
-    uint position_x;             // +0x06: X coordinate or parameter 4
-    uint position_y;             // +0x08: Y coordinate or parameter 5  
-    uint backup_x;               // +0x0A: Backup X (conditional copy from position_x)
-    uint backup_y;               // +0x0C: Backup Y (conditional copy from position_y)
-    uint parameter_6;            // +0x0E: Parameter 6 value
-    uint parameter_6_copy;       // +0x10: Duplicate of parameter 6
-    uint max_value_flag;         // +0x12: Set to 0xFF (max value indicator)
-    // ... gap in analyzed offsets ...
-    uint field_28;               // +0x28: Initialized to 0
-    uint field_2A;               // +0x2A: Parameter 2 value
-    uint field_2C;               // +0x2C: Parameter 7 value  
-    uint field_2E;               // +0x2E: Copy of parameter 2
-    uint global_reference;       // +0x30: Reference to global variable (276a:9e80)
-    // Additional fields up to 52 bytes total
+struct PANIAnimatedSprite {
+    uint active_flag;            // +0x00: Sprite active/visible flag (1 = active)
+    uint animation_status;       // +0x02: Animation state (0 = hidden, 1 = visible)
+    int sprite_type_id;          // +0x04: Sprite graphics ID or animation type (param - 1)
+    uint screen_x;               // +0x06: Current X screen coordinate (0-319)
+    uint screen_y;               // +0x08: Current Y screen coordinate (0-199)
+    uint backup_x;               // +0x0A: Previous/backup X position for animation
+    uint backup_y;               // +0x0C: Previous/backup Y position for animation
+    uint animation_param;        // +0x0E: Animation-specific parameter (speed, frame, etc.)
+    uint animation_param_copy;   // +0x10: Duplicate of animation parameter for state
+    uint timing_flag;            // +0x12: Animation timing flag (0xFF for max timing)
+    // ... animation state data ...
+    uint animation_counter;      // +0x28: Frame counter or animation state
+    uint graphics_data_ref;      // +0x2A: Reference to sprite graphics data
+    uint animation_sequence;     // +0x2C: Animation sequence or pattern ID
+    uint graphics_data_copy;     // +0x2E: Copy of graphics reference
+    uint global_animation_ref;   // +0x30: Reference to global animation parameters
+    // Additional animation fields up to 52 bytes total
+};
+```
+
+**PANI Animation Usage**:
+- **Sprite lifecycle management** for PANI animation sequences
+- **Screen positioning system** with EGA coordinate mapping (320×200)
+- **Animation state preservation** with backup coordinate system for smooth movement
+- **Graphics integration** with sprite data references and rendering parameters
+- **Frame-based animation** with timing controls and sequence management
+- **Multi-sprite coordination** for complex briefing and cutscene animations
+- **Special animation logic** for sprite_type_id == -1 (triggers position backup for smooth transitions)
+
+---
+
+## GameConfiguration Structure
+**Size**: 14+ bytes (7+ fields, 2 bytes each)  
+**Found in**: `process_game_configuration_structure` (1792:ac84)  
+**Base Address Pattern**: Pointer-based access with array indices [0] to [6]
+
+```c
+struct GameConfiguration {
+    uint validation_field;       // [0]: Used for structure validation
+    uint field_1;               // [1]: Unknown field  
+    uint config_parameter;      // [2]: Main configuration parameter
+    uint scaling_factor;        // [3]: Used in mathematical calculations with global variables
+    uint coordinate_x;          // [4]: X coordinate (-1 = no change)
+    uint coordinate_y;          // [5]: Y coordinate (-1 = no change)
+    uint display_parameter;     // [6]: Display/graphics parameter (-1 = no change)
+    // Possibly additional fields beyond index 6
 };
 ```
 
 **Usage**:
-- Game object initialization and management system
-- Handles positioning with backup coordinate system
-- Special case logic for object_id == -1 (triggers coordinate backup)
-- Integrates with global game state management
-- Supports parameter duplication for state preservation
+- Game initialization and configuration management
+- Coordinate system setup for graphics/gameplay
+- Conditional parameter setting (uses -1 as "no change" sentinel)
+- Mathematical scaling calculations for game timing/difficulty
+- Integration with graphics coordinate system
+- Validation-based structure processing (field [0] must pass validation)
 
 ---
 
@@ -119,4 +149,6 @@ struct GameObject {
 - Bit flag systems are extensively used for state management
 - 16-bit DOS memory constraints influence structure sizes
 - Cross-references between structures create complex relationship networks
-- GameObject structure shows sophisticated parameter management with backup systems 
+- **PANIAnimatedSprite structure enables revolutionary 1990 animation system** with backup coordinate smoothing
+- GameConfiguration structure uses -1 as sentinel values for optional parameters
+- **PANI animation system predates modern game engine architecture by years** - complete sprite management with VM scripting 
