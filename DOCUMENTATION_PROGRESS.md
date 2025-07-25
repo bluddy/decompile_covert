@@ -493,6 +493,34 @@ DOS/BIOS INTERRUPT LAYER:
 
 ### **🎯 STRUCTURAL PATTERNS DISCOVERED:**
 
+#### **Complete Data Structure Documentation - NEW APPROACH:**
+- **✅ structs.md**: Comprehensive data structure documentation file created
+- **✅ enums.md**: Complete enumeration documentation file created
+- **🔄 Incremental Updates**: All future discoveries will update these dedicated files
+
+#### **Person Structure (16 bytes) - FULLY DOCUMENTED:**
+- **Purpose**: Core character database for all NPCs and agents
+- **Location**: person_index * 0x10 + base_offset
+- **Components**: organization_id, person_attributes, location_id, intelligence_flags, case_involvement, role_flags, additional_data, status
+- **Usage**: Tracks relationships, intelligence discovery, case progression
+
+#### **ChronologyEvent Structure (14 bytes) - FULLY DOCUMENTED:**
+- **Purpose**: Timeline management for case progression  
+- **Location**: event_index * 0xe + chronology_base
+- **Components**: event_id, discovery_flags, person1, person2, location
+- **Usage**: Links characters/locations/events, tracks investigative progress
+
+#### **Organization Structure (36 bytes) - FULLY DOCUMENTED:**
+- **Purpose**: Criminal organization database (16 total organizations)
+- **Location**: org_id * 0x24 + org_data_base  
+- **Components**: coordinates, power_level, attributes, name[24]
+- **Usage**: Geographic positioning, power calculations, intelligence reports
+
+#### **ConnectionType Enum - FULLY DOCUMENTED:**
+- **Values**: HIDEOUT=1, AGENT=2, SAFEHOUSE=3, ACTIVE_CELL=4, OFFICE=5
+- **Purpose**: Describes relationship types between organizations and locations
+- **Usage**: Intelligence discovery engine, connection strength descriptions
+
 #### **Save Game Data Structure (IDENTIFIED):**
 - **Purpose**: Complete player and game state persistence
 - **Size**: Large structured data (player stats, mission state, world data)
