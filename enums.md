@@ -5,12 +5,12 @@ This file documents all identified enumerations in Covert Action's codebase, dis
 
 ---
 
-## ConnectionType Enum
+## LocationType Enum
 **Found in**: `append_connection_type_description` (1792:83e8)  
 **Usage**: Describes relationship types between organizations and locations
 
 ```c
-enum ConnectionType {
+enum LocationType {
     HIDEOUT = 1,        // "hideout" - Criminal hideout location
     AGENT = 2,          // "agent" - Agent or contact person  
     SAFEHOUSE = 3,      // "safehouse" - Safe meeting location
