@@ -5,7 +5,8 @@ When analyzing, your job is to
 1. Rename the functions as you identify them,
 2. Rename the global and local variables
 3. Add clarifying comments.
-4. If possible, determine structs and build them. This is harder and more speculative.
+4. If you figure out structs or enums, tell the user the layout - you currently don't have the ability to define them yourself.
+5. Important: Document your progress after every discovery in the appropriate markdown files.
 
 ## 📋 **VARIABLE NAMING CONVENTIONS**
 
