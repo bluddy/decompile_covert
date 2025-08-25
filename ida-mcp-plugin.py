@@ -487,7 +487,7 @@ def get_function(address: int, *, raise_error=True) -> Function:
     except AttributeError:
         name = ida_funcs.get_func_name(fn.start_ea)
 
-    return Function(address=hex(address), name=name, size=hex(fn.end_ea - fn.start_ea))
+    return Function(address=hex(address), name=name or "", size=hex(fn.end_ea - fn.start_ea))
 
 DEMANGLED_TO_EA = {}
 
@@ -944,7 +944,7 @@ def disassemble_function(
         lines += [line]
 
     disassembly_function = DisassemblyFunction(
-        name=func.name,
+        name=func.name or "",
         start_ea=f"{func.start_ea:#x}",
         stack_frame=get_stack_frame_variables_internal(func.start_ea),
         lines=lines
@@ -953,8 +953,8 @@ def disassemble_function(
     prototype = ida_typeinf.tinfo_t()
     # func.get_prototype() is not available on all IDA versions, so we get the type info this way
     if ida_nalt.get_tinfo(prototype, func.start_ea) and prototype.is_func():
-        arguments: list[Argument] = [Argument(name=arg.name, type=f"{arg.type}") for arg in prototype.iter_func()]
-        disassembly_function.update(return_type=f"{prototype.get_rettype()}", arguments=arguments)
+        arguments: list[Argument] = [Argument(name=arg.name or "", type=str(arg.type) or "") for arg in prototype.iter_func()]
+        disassembly_function.update(return_type=str(prototype.get_rettype()) or "", arguments=arguments)
 
     return disassembly_function
 
@@ -1301,10 +1301,10 @@ def get_stack_frame_variables_internal(function_address: int) -> list[dict]:
     tif.get_udt_details(udt)
     for udm in udt:
         if not udm.is_gap():
-            name = udm.name
+            name = udm.name or ""
             offset = udm.offset // 8
             size = udm.size // 8
-            type = str(udm.type)
+            type = str(udm.type) or ""
 
             members += [StackFrameVariable(name=name,
                                            offset=hex(offset),
