@@ -1031,10 +1031,8 @@ def get_callees(
     func = idaapi.get_func(func_start)
     if not func:
         raise IDAError(f"No function found containing address {function_address}")
-    func_end = idc.find_func_end(func_start)
     callees: list[dict[str, str]] = []
-    current_ea = func_start
-    while current_ea < func_end:
+    for current_ea in idautils.FuncItems(func_start):
         insn = idaapi.insn_t()
         idaapi.decode_insn(insn, current_ea)
         if insn.itype in [idaapi.NN_call, idaapi.NN_callfi, idaapi.NN_callni]:
@@ -1052,7 +1050,6 @@ def get_callees(
                     callees.append(
                         {"address": hex(target), "name": func_name, "type": func_type}
                     )
-        current_ea = idc.next_head(current_ea, func_end)
 
     # deduplicate callees
     unique_callee_tuples = {tuple(callee.items()) for callee in callees}
