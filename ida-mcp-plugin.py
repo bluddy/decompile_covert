@@ -164,6 +164,10 @@ class JSONRPCRequestHandler(http.server.BaseHTTPRequestHandler):
                 "data": traceback.format_exc(),
             }
 
+        # --- MCP DEBUGGING ---
+        # Print the response to the IDA output window to debug validation errors
+        print(f"[MCP-DEBUG] Response: {json.dumps(response, indent=2)}")
+
         try:
             response_body = json.dumps(response).encode("utf-8")
         except Exception as e:
@@ -467,13 +471,19 @@ class Function(TypedDict):
     size: str
 
 def parse_address(address: str) -> int:
+    # ida_kernwin.str2ea is powerful and can handle labels, hex, decimal, etc.
+    # It's what powers the "Jump to address" (g) dialog.
+    ea = ida_kernwin.str2ea(address)
+    if ea != idaapi.BADADDR:
+        return ea
+
+    # If str2ea fails, it might be a simple number string that it couldn't resolve
+    # as a name. We can try a simple int conversion as a fallback.
     try:
         return int(address, 0)
-    except ValueError:
-        for ch in address:
-            if ch not in "0123456789abcdefABCDEF":
-                raise IDAError(f"Failed to parse address: {address}")
-        raise IDAError(f"Failed to parse address (missing 0x prefix): {address}")
+    except (ValueError, TypeError):
+        # If both methods fail, raise an error.
+        raise IDAError(f"Failed to parse address: {address}")
 
 def get_function(address: int, *, raise_error=True) -> Function:
     fn = idaapi.get_func(address)
@@ -862,13 +872,13 @@ def disassemble_function(
     lines = []
     for address in ida_funcs.func_item_iterator_t(func):
         seg = idaapi.getseg(address)
-        segment = idaapi.get_segm_name(seg) if seg else None
+        segment = (idaapi.get_segm_name(seg) or "") if seg else ""
 
-        label = idc.get_name(address, 0)
+        label = idc.get_name(address, 0) or ""
         if label and label == func.name and address == func.start_ea:
-            label = None
+            label = ""
         if label == "":
-            label = None
+            label = ""
 
         comments = []
         if comment := idaapi.get_cmt(address, False):
@@ -947,7 +957,9 @@ def disassemble_function(
         name=func.name or "",
         start_ea=f"{func.start_ea:#x}",
         stack_frame=get_stack_frame_variables_internal(func.start_ea),
-        lines=lines
+        lines=lines,
+        return_type="",
+        arguments=[]
     )
 
     prototype = ida_typeinf.tinfo_t()
@@ -1114,6 +1126,18 @@ def rename_global_variable(
     ea = idaapi.get_name_ea(idaapi.BADADDR, old_name)
     if not idaapi.set_name(ea, new_name):
         raise IDAError(f"Failed to rename global variable {old_name} to {new_name}")
+
+@jsonrpc
+@idawrite
+def create_global_variable(
+    address: Annotated[str, "Address to create the global variable at. Can be a hex string or an IDA name like 'ds:1234h'."],
+    name: Annotated[str, "Name for the new global variable."],
+):
+    """Create a global variable (a name/label) at a specific address."""
+    ea = parse_address(address)
+    # set_name returns 1 on success, 0 on failure. SN_CHECK validates the name.
+    if not idaapi.set_name(ea, name, ida_name.SN_CHECK):
+        raise IDAError(f"Failed to create global variable '{name}' at address {hex(ea)}")
 
 @jsonrpc
 @idawrite
