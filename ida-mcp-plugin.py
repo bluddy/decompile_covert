@@ -1354,6 +1354,95 @@ def get_defined_structures() -> list[StructureDefinition]:
 
     return rv
 
+class Enum(TypedDict):
+    name: str
+    size: int
+
+class EnumMember(TypedDict):
+    name: str
+    value: int
+
+class EnumDefinition(TypedDict):
+    name: str
+    size: int
+    members: list[EnumMember]
+
+@jsonrpc
+@idaread
+def list_enums() -> list[Enum]:
+    """ Returns a list of all defined enums """
+    enums = []
+    til = ida_typeinf.get_idati()
+    for i in range(ida_typeinf.get_enum_qty(til)):
+        enum_id = ida_typeinf.getn_enum(til, i)
+        if enum_id:
+            enums.append(Enum(
+                name=ida_typeinf.get_enum_name(til, enum_id),
+                size=ida_typeinf.get_enum_width(til, enum_id)
+            ))
+    return enums
+
+@jsonrpc
+@idaread
+def get_enum(enum_name: str) -> EnumDefinition:
+    """ Returns the definition of a specific enum """
+    til = ida_typeinf.get_idati()
+    enum_id = ida_typeinf.get_enum(til, enum_name)
+    if not enum_id:
+        raise IDAError(f"Enum '{enum_name}' not found.")
+
+    members = []
+    # Use a visitor to get all members
+    class member_visitor(ida_typeinf.enum_member_visitor_t):
+        def visit_enum_member(self, cid, c):
+            members.append(EnumMember(name=c.name, value=c.value))
+            return 0
+    ida_typeinf.for_all_enum_members(til, enum_id, member_visitor())
+
+    return EnumDefinition(
+        name=ida_typeinf.get_enum_name(til, enum_id),
+        size=ida_typeinf.get_enum_width(til, enum_id),
+        members=members
+    )
+
+@jsonrpc
+@idawrite
+def add_enum_member(
+    enum_name: Annotated[str, "Name of the enum to modify"],
+    member_name: Annotated[str, "Name of the new member"],
+    value: Annotated[int, "Value of the new member"]
+):
+    """ Adds a member to an existing enum """
+    til = ida_typeinf.get_idati()
+    enum_id = ida_typeinf.get_enum(til, enum_name)
+    if not enum_id:
+        raise IDAError(f"Enum '{enum_name}' not found.")
+
+    # add_enum_member returns 0 on success
+    if ida_typeinf.add_enum_member(til, enum_id, member_name, value, ida_typeinf.dummy_bmask) != 0:
+        raise IDAError(f"Failed to add member '{member_name}' to enum '{enum_name}'. Maybe a member with the same name or value already exists.")
+
+@jsonrpc
+@idawrite
+def delete_enum_member(
+    enum_name: Annotated[str, "Name of the enum to modify"],
+    member_name: Annotated[str, "Name of the member to delete"]
+):
+    """ Deletes a member from an existing enum by its name """
+    til = ida_typeinf.get_idati()
+    enum_id = ida_typeinf.get_enum(til, enum_name)
+    if not enum_id:
+        raise IDAError(f"Enum '{enum_name}' not found.")
+
+    member_id = ida_typeinf.get_enum_member_by_name(til, enum_id, member_name)
+    if not member_id:
+        raise IDAError(f"Enum member '{member_name}' not found in '{enum_name}'.")
+
+    # del_enum_member takes the value of the member to delete
+    member_value = ida_typeinf.get_enum_member_value(til, member_id)
+    if not ida_typeinf.del_enum_member(til, enum_id, member_value, 0, ida_typeinf.dummy_bmask):
+        raise IDAError(f"Failed to delete member '{member_name}' from enum '{enum_name}'.")
+
 @jsonrpc
 @idawrite
 def rename_stack_frame_variable(
