@@ -471,8 +471,7 @@ class Function(TypedDict):
     size: str
 
 def parse_address(address: str) -> int:
-    # ida_kernwin.str2ea is powerful and can handle labels, hex, decimal, etc.
-    # It's what powers the "Jump to address" (g) dialog.
+    # If str2ea fails with context, try without it.
     ea = ida_kernwin.str2ea(address)
     if ea != idaapi.BADADDR:
         return ea
@@ -497,7 +496,7 @@ def get_function(address: int, *, raise_error=True) -> Function:
     except AttributeError:
         name = ida_funcs.get_func_name(fn.start_ea)
 
-    return Function(address=hex(address), name=name or "", size=hex(fn.end_ea - fn.start_ea))
+    return Function(address=hex(fn.start_ea), name=name or "", size=hex(fn.end_ea - fn.start_ea))
 
 DEMANGLED_TO_EA = {}
 
@@ -859,13 +858,17 @@ class DisassemblyFunction(TypedDict):
 @jsonrpc
 @idaread
 def disassemble_function(
-    start_address: Annotated[str, "Address of the function to disassemble"],
+    address_str: Annotated[str, "An address inside the function to disassemble"],
 ) -> DisassemblyFunction:
     """Get assembly code for a function"""
-    start = parse_address(start_address)
-    func: ida_funcs.func_t = idaapi.get_func(start)
+    address_val = parse_address(address_str)
+    print(f"address_val is {address_val}")
+    func: ida_funcs.func_t = idaapi.get_func(address_val)
     if not func:
-        raise IDAError(f"No function found containing address {start_address}")
+        raise IDAError(f"No function found at address {address_str}")
+
+    # Use the canonical start address from now on.
+    start = func.start_ea
     if is_window_active():
         ida_kernwin.jumpto(start)
 
@@ -1130,7 +1133,7 @@ def rename_global_variable(
 @jsonrpc
 @idawrite
 def create_global_variable(
-    address: Annotated[str, "Address to create the global variable at. Can be a hex string or an IDA name like 'ds:1234h'."],
+    address: Annotated[str, "Address to create the global variable at. Can be a hex string or an IDA name like '4567h:1234h'."],
     name: Annotated[str, "Name for the new global variable."],
 ):
     """Create a global variable (a name/label) at a specific address."""
